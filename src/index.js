@@ -17,7 +17,7 @@ form.addEventListener("submit", onSubmit);
 function onSubmit(event) {
   event.preventDefault();
   const name = form.elements.searchQuery.value;
-  if (name === "") {
+  if (name === "") {gallery.innerHTML = "";
     return Notify.failure
       ('Sorry, there are no images matching your search query. Please try again.');
   }
