@@ -1,92 +1,80 @@
 
-import { URL } from  "./fetchPhoto"; 
+import { images } from  "./fetchImages"; 
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import axios from "axios";
+import SimpleLightbox from "simplelightbox";
+import "simplelightbox/dist/simple-lightbox.min.css";
 
-const input = document.querySelector('.search-form');
+axios.defaults.baseURL = "https://pixabay.com/api/"
+
+const form = document.querySelector('.search-form');
 const loadMore = document.querySelector('.load-more');
+const gallery = document.querySelector('.gallery');
+  
+form.addEventListener("submit", onSubmit);
+// loadMore.addEventListener("click", onMore);
 
 
-input.addEventListener("submit", onSubmit);
-loadMore.addEventListener("click", onMore);
-
-
-
-
-
-
-
-function onSubmit() {
-  const name = input.value.trim();
-  console.log(name);
+function onSubmit(event) {
+  event.preventDefault();
+  const name = form.elements.searchQuery.value;
   if (name === "") {
-    return (countryList.innerHTML = ''),
-      (countryInfo.innerHTML = '')
+    return Notify.failure
+      ('Sorry, there are no images matching your search query. Please try again.');
   }
+  fetchImage(name).then(data => {
+    return data.hits
+  })
+  .then(hits => {gallery.innerHTML = createMarkup(hits)
+    lightbox.refresh();}).catch(error =>
+  console.log(error));
+};
 
 
-    fetchCountries(name)
-    .then(countries => {
-      countryList.innerHTML = ''
-      countryInfo.innerHTML = ''
-      if (countries.length === 1) {
-        countryList.insertAdjacentHTML('beforeend', createMarkupList(countries))
-        countryInfo.insertAdjacentHTML('beforeend', createMarkupInfo(countries))
-      } else if (countries.length >= 10) {
-        alertManyFound()
-      } else {
-       countryList.insertAdjacentHTML('beforeend', createMarkupList(countries))
-      }
-    })
-    .catch(alertNotFound);
+
+function fetchImage(name) {
+  const searchParams = new URLSearchParams({
+  key: '28436023-a5d1ac3dfed2e17b83fc46f1a',
+  q: name,
+  image_type: "photo",
+  orientation: "horizontal",
+  safesearch: true,
+});
+  return axios.get(`?${searchParams}`).then(response => response.data);
 }
+  
+function createMarkup(hits){
+    const markup = hits.map(({name, webformatURL, largeImageURL, tags, likes, views, comments, downloads}) => {
+        return `
+       <div class="photo-card">
+       <a class="gallery__link" href="${largeImageURL}">
+       <img class="gallery__image" src="${webformatURL}" alt="${tags}" loading="lazy" />
+       </a>
+       <div class="info">
+         <p class="info-item">
+           <b>Likes: ${likes}</b>
+         </p>
+         <p class="info-item">
+           <b>Views: ${views}</b>
+         </p>
+         <p class="info-item">
+           <b>Comments: ${comments}</b>
+         </p>
+         <p class="info-item">
+           <b>Downloads: ${downloads}</b>
+         </p>
+       </div>
+     </div>`;}).join("");
+    return markup;
+     
+};
+ 
+let lightbox = new SimpleLightbox('.photo-card a', {
+  captions: true,
+  captionsData: 'alt',
+  captionDelay: 250,
+});
 
 
 
-function createMarkupInfo(countries){
-    const markup = countries.map(({name, capital, population, languages, flags}) => {
-       return `
-        <ul class="country-info__list">
-       <li class="country-info__item"><p><b>Capital: </b>${capital}</p></li>
-       <li class="country-info__item"><p><b>Population: </b>${population}</p></li>
-       <li class="country-info__item"><p><b>Languages: </b>${Object.values(languages).join(', ')}</p></li>
-   </ul>`;}).join("");
-       return markup;
- };
- function createMarkupList(countries){
-    const markupInfo = countries.map(({name, flags}) => {
-               return `
-               <li class="country-list__item">
-               <img class="country-list__flag" src="${flags.svg}" alt="Flag of ${name.official}" width = 30px height = 30px>
-               <h2 class="country-list__name">${name.official}</h2>
-           </li>`;}).join("");
-               return markupInfo;
-     }
-    function alertManyFound(){
-         return Notify.info('Too many matches found. Please enter a more specific name.');
-    }
-    function alertNotFound(){
-        Notify.failure('"Oops, there is no country with that name');
-    }
 
-
-
-
-
-
-/* <div class="photo-card">
-  <img src="" alt="" loading="lazy" />
-  <div class="info">
-    <p class="info-item">
-      <b>Likes</b>
-    </p>
-    <p class="info-item">
-      <b>Views</b>
-    </p>
-    <p class="info-item">
-      <b>Comments</b>
-    </p>
-    <p class="info-item">
-      <b>Downloads</b>
-    </p>
-  </div>
-</div> */
