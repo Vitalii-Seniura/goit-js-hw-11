@@ -1,46 +1,48 @@
 
 import { Notify } from 'notiflix/build/notiflix-notify-aio';
-import axios from "axios";
+import { fetchImage, resetPage } from './fetchImages';
 import SimpleLightbox from "simplelightbox";
 import "simplelightbox/dist/simple-lightbox.min.css";
 
-axios.defaults.baseURL = "https://pixabay.com/api/"
 
 const form = document.querySelector('.search-form');
 const loadMore = document.querySelector('.load-more');
 const gallery = document.querySelector('.gallery');
+
+let name = '';
   
 form.addEventListener("submit", onSubmit);
-// loadMore.addEventListener("click", onMore);
+
+loadMore.addEventListener("click", () => {
+  fetchImage(name).then(data => {
+    
+    return data.hits
+  })
+  .then(hits => {gallery.insertAdjacentHTML("beforeend" , createMarkup(hits))
+    lightbox.refresh();}).catch(error =>
+  console.log(error));
+})
 
 
 function onSubmit(event) {
   event.preventDefault();
+  resetPage();
+  loadMore.classList.remove('is-visible');
   const name = form.elements.searchQuery.value;
   if (name === "") {gallery.innerHTML = "";
     return Notify.failure
       ('Sorry, there are no images matching your search query. Please try again.');
   }
+  
   fetchImage(name).then(data => {
     return data.hits
   })
   .then(hits => {gallery.innerHTML = createMarkup(hits)
-    lightbox.refresh();}).catch(error =>
+    lightbox.refresh();
+  loadMore.classList.add('is-visible')}).catch(error =>
   console.log(error));
 };
 
-
-
-function fetchImage(name) {
-  const searchParams = new URLSearchParams({
-  key: '28436023-a5d1ac3dfed2e17b83fc46f1a',
-  q: name,
-  image_type: "photo",
-  orientation: "horizontal",
-  safesearch: true,
-});
-  return axios.get(`?${searchParams}`).then(response => response.data);
-}
   
 function createMarkup(hits){
     const markup = hits.map(({name, webformatURL, largeImageURL, tags, likes, views, comments, downloads}) => {

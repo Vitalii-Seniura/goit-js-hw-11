@@ -108,11 +108,16 @@ button {
 }
 
 .load-more {
+  display: none;
   color: #fafafa;
   background-color: cornflowerblue;
   width: 150px;
   height: 50px;
   border-radius: 15px;
   margin-left: 45%;
+}
+
+.is-visible {
+  display: inline-block;
 }
 
