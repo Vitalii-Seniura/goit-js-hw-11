@@ -13,9 +13,8 @@ let name = '';
   
 form.addEventListener("submit", onSubmit);
 
-loadMore.addEventListener("click", () => {
-  fetchImage(name).then(data => {
-    
+loadMore.addEventListener("click", async () => {
+  await fetchImage(name).then(data => {
     return data.hits
   })
   .then(hits => {gallery.insertAdjacentHTML("beforeend" , createMarkup(hits))
@@ -24,24 +23,52 @@ loadMore.addEventListener("click", () => {
 })
 
 
-function onSubmit(event) {
+async function onSubmit(event) {
   event.preventDefault();
   resetPage();
   loadMore.classList.remove('is-visible');
-  const name = form.elements.searchQuery.value;
-  if (name === "") {gallery.innerHTML = "";
+  name = form.elements.searchQuery.value.trim();
+  if (name === "") {
+    gallery.innerHTML = "";
     return Notify.failure
       ('Sorry, there are no images matching your search query. Please try again.');
   }
+
+   
   
   fetchImage(name).then(data => {
     return data.hits
   })
-  .then(hits => {gallery.innerHTML = createMarkup(hits)
-    lightbox.refresh();
-  loadMore.classList.add('is-visible')}).catch(error =>
-  console.log(error));
-};
+    .then(hits => {
+      gallery.innerHTML = createMarkup(hits)
+      lightbox.refresh();
+      loadMore.classList.add('is-visible')
+    }).catch(error =>
+      console.log(error));
+  
+  
+  try {
+    fetchImage(name).then(data => { return data.totalHits })
+      .then(totalHits => {
+   
+        if (totalHits === 0) {
+          loadMore.classList.remove('is-visible');
+          resetPage();
+          gallery.innerHTML = "";
+          Notify.failure('Sorry, there are no images matching your search query. Please try again.');
+        }
+        else {
+          Notify.success(`Hooray! We found ${totalHits} images.`);
+        }
+      })
+  }
+  catch (error) {
+      console.log(error);
+    }
+    
+  };
+
+
 
   
 function createMarkup(hits){
@@ -75,7 +102,4 @@ let lightbox = new SimpleLightbox('.photo-card a', {
   captionsData: 'alt',
   captionDelay: 250,
 });
-
-
-
 
