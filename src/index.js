@@ -14,14 +14,16 @@ let name = '';
 form.addEventListener("submit", onSubmit);
 
 loadMore.addEventListener("click", async () => {
-  await fetchImage(name).then(data => {
-    return data.hits
-  })
-  .then(hits => {gallery.insertAdjacentHTML("beforeend" , createMarkup(hits))
-    lightbox.refresh();}).catch(error =>
+  await fetchImage(name).then(({ page, hits, totalHits }) => { 
+    gallery.insertAdjacentHTML("beforeend", createMarkup(hits))
+      lightbox.refresh();
+    if ((totalHits - 40) < 40) {
+      loadMore.classList.remove('is-visible');
+      Notify.failure("We're sorry, but you've reached the end of search results.");
+    }
+  }).catch(error =>
   console.log(error));
 })
-
 
 async function onSubmit(event) {
   event.preventDefault();
@@ -33,38 +35,22 @@ async function onSubmit(event) {
     return Notify.failure
       ('Sorry, there are no images matching your search query. Please try again.');
   }
-
-   
-  
-  fetchImage(name).then(data => {
-    return data.hits
-  })
-    .then(hits => {
-      gallery.innerHTML = createMarkup(hits)
-      lightbox.refresh();
-      loadMore.classList.add('is-visible')
-    }).catch(error =>
-      console.log(error));
-  
-  
-  try {
-    fetchImage(name).then(data => { return data.totalHits })
-      .then(totalHits => {
-   
-        if (totalHits === 0) {
+ 
+  fetchImage(name).then(({ hits, totalHits }) => {
+    if (totalHits === 0) {
           loadMore.classList.remove('is-visible');
           resetPage();
           gallery.innerHTML = "";
           Notify.failure('Sorry, there are no images matching your search query. Please try again.');
         }
         else {
-          Notify.success(`Hooray! We found ${totalHits} images.`);
+          gallery.innerHTML = createMarkup(hits)
+      lightbox.refresh();
+    loadMore.classList.add('is-visible');
+    Notify.success(`Hooray! We found ${totalHits} images.`);
         }
-      })
-  }
-  catch (error) {
-      console.log(error);
-    }
+    }).catch(error =>
+      console.log(error));
     
   };
 
